@@ -1,44 +1,58 @@
-Python ###Python Flask Server###
-2	###Version 3###
-3	###By Gh0st###
-4	
-5	from flask import Flask, request, jsonify, render_template
-6	from datetime import datetime
-7	
-8	app = Flask(__name__)
-9	
-10	# List to store machine info
-11	machine_info_list = []
-12	
-13	# Endpoint to handle incoming data from the client
-14	@app.route('/upload', methods=['POST'])
-15	def upload_data():
-16	    try:
-17	        # Get the JSON data sent from the client
-18	        data = request.get_json()
-19	        
-20	        # Add a timestamp to the data
-21	        timestamp = datetime.now().isoformat()
-22	        data['timestamp'] = timestamp
-23	
-24	        # Append the received data to the list
-25	        machine_info_list.append(data)
-26	
-27	        # Log the received data
-28	        print("Received data:", data)
-29	
-30	        # Return a success response
-31	        return jsonify({"message": "Data received successfully!"}), 201
-32	
-33	    except Exception as e:
-34	        print("Error processing request:", e)
-35	        return jsonify({"error": "Failed to process the request."}), 400
-36	
-37	# Endpoint to render the HTML page with machine info
-38	@app.route('/')
-39	def index():
-40	    return render_template('index.html', machine_info=machine_info_list)
-41	
-42	if __name__ == "__main__":
-43	    # Run the Flask app on the specified host and port
-44	    app.run(host='127.0.0.1', port=8000)
+import json
+from flask import Flask, request, jsonify, render_template
+from datetime import datetime
+
+app = Flask(__name__)
+
+DATA_FILE = "machine_data.json"
+
+# Function to load data from the JSON file
+def load_data():
+    try:
+        with open(DATA_FILE, "r") as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []  # Return empty list if file doesn't exist or is corrupted
+
+# Function to save data to the JSON file
+def save_data():
+    with open(DATA_FILE, "w") as file:
+        json.dump(machine_info_list, file, indent=4)
+
+# Load existing data on startup
+machine_info_list = load_data()
+
+# Endpoint to handle incoming data from the client
+@app.route('/upload', methods=['POST'])
+def upload_data():
+    try:
+        # Get the JSON data sent from the client
+        data = request.get_json()
+
+        # Add a timestamp to the data
+        data['timestamp'] = datetime.now().isoformat()
+
+        # Append the received data to the list
+        machine_info_list.append(data)
+
+        # Save to JSON file
+        save_data()
+
+        # Log the received data
+        print("Received data:", data)
+
+        # Return a success response
+        return jsonify({"message": "Data received successfully!"}), 201
+
+    except Exception as e:
+        print("Error processing request:", e)
+        return jsonify({"error": "Failed to process the request."}), 400
+
+# Endpoint to render the HTML page with machine info
+@app.route('/')
+def index():
+    return render_template('index.html', machine_info=machine_info_list)
+
+if __name__ == "__main__":
+    # Run the Flask app on the specified host and port
+    app.run(host='127.0.0.1', port=5000)
