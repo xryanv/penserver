@@ -1,2 +1,2 @@
 # penserver
-Private pen-test repo
+Pen-test repo
